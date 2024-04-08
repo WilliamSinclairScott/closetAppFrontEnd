@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "firebase": "^10.10.0"
+  },
+  "name": "closetappfrontend",
+  "description": "the front end to a MEN CRUD webapp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
