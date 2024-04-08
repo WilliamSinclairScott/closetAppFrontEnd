@@ -21,3 +21,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const firebase = initializeApp(firebaseConfig);
 //const analytics = getAnalytics(firebase);
+
+const auth = firebase.getAuth();
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    console.log('User is signed in');
+  } else {
+    console.log('User is signed out');
+  }
+})
