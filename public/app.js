@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 //import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-analytics.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -20,14 +20,35 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const firebase = initializeApp(firebaseConfig);
+const auth = getAuth();
+const provider = new GoogleAuthProvider();
 //const analytics = getAnalytics(firebase);
+const whenSignedIn = document.getElementById('whenLoggedIn');
+const whenSignedOut = document.getElementById('whenLoggedOut');
+const signInBtn = document.getElementById('login');
+const signOutBtn = document.getElementById('logout');
 
-const auth = firebase.getAuth();
+signInBtn.onclick = () => {
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      const user = result.user;
+      console.log('Hello, ' + user.displayName);
+    })
+    .catch((error) => {
+      console.log(error.message);
+    });
+}
+signOutBtn.onclick = () => auth.signOut();
 
 auth.onAuthStateChanged(user => {
   if (user) {
     console.log('User is signed in');
+    whenSignedIn.style.display = 'flex';
+    whenSignedOut.style.display = 'none';
+    whenSignedOut.hidden = true;
   } else {
-    console.log('User is signed out');
+    console.log('User is signed out')
+    whenSignedIn.style.display = 'none'
+    whenSignedOut.style.display = 'flex'
   }
 })
