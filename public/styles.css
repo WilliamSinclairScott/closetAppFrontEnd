@@ -116,3 +116,34 @@ body{
   justify-content: center;
   align-items: center;
 }
+
+#addItemPopUp{
+  display: block;
+  position: fixed;
+  border: solid 1px black;
+  background-color: rgba(47, 228, 101, 0.98);
+  width: 80%;
+  height: 80%;
+}
+#addItemPopUp > form {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  height: 100%;
+}
+#addItemPopUp > form > fieldset {
+  display: flex;
+  max-height: 100px; /* Set a max height for the fieldset */
+  max-width: 95%;
+  overflow-y: auto; /* Enable vertical scrolling */
+  border: 1px solid #ccc; /* Add border for visual clarity */
+  padding: 10px; /* Add padding for spacing */
+}
+
+#previewAddItem{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+}
