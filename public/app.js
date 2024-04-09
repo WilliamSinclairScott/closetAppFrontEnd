@@ -2,6 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 //import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-analytics.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+import {getStorage, ref, uploadBytes, getDownloadURL} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-storage.js";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -22,6 +23,8 @@ const firebaseConfig = {
 const firebase = initializeApp(firebaseConfig);
 const auth = getAuth();
 const provider = new GoogleAuthProvider();
+const storage = getStorage(firebase);
+const storageRef = ref(storage, 'images');
 //const analytics = getAnalytics(firebase);
 const whenSignedIn = document.getElementById('whenLoggedIn');
 const whenSignedOut = document.getElementById('whenLoggedOut');
@@ -162,6 +165,20 @@ function addAddItemPopUp(tags) {
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const formData = new FormData(form);
-    console.log(formData);
+    formData.forEach(function(value, key) {
+      console.log(key + ': ' + value);
+      if (key === 'picture') {
+        const file = value;
+        const storageRef = ref(storage, 'images/' + file.name);
+        uploadBytes(storageRef, file).then((snapshot) => {
+          console.log('Uploaded a blob or file!');
+          getDownloadURL(storageRef).then((url) => {
+            console.log('File available at', url);
+            value = url;
+          });
+        });
+      }
+    });
+    //fetch('/upload', {
   });
 }
