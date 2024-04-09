@@ -43,9 +43,8 @@ signOutBtn.onclick = () => auth.signOut();
 auth.onAuthStateChanged(user => {
   if (user) {
     console.log('User is signed in');
-    whenSignedIn.style.display = 'flex';
+    whenSignedIn.style.display = 'grid';
     whenSignedOut.style.display = 'none';
-    whenSignedOut.hidden = true;
   } else {
     console.log('User is signed out')
     whenSignedIn.style.display = 'none'
