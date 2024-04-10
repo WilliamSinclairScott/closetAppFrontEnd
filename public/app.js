@@ -24,7 +24,7 @@ const firebase = initializeApp(firebaseConfig);
 const auth = getAuth();
 const provider = new GoogleAuthProvider();
 const storage = getStorage(firebase);
-const storageRef = ref(storage, 'images');
+// const storageRef = ref(storage, 'images');
 //const analytics = getAnalytics(firebase);
 const whenSignedIn = document.getElementById('whenLoggedIn');
 const whenSignedOut = document.getElementById('whenLoggedOut');
@@ -32,16 +32,18 @@ const signInBtn = document.getElementById('login');
 const signOutBtn = document.getElementById('logout');
 const addItemBtn = document.getElementById('addbtn');
 
+//Sign In Firebase with google Auth
 signInBtn.onclick = () => {
   signInWithPopup(auth, provider)
     .then((result) => {
       const user = result.user;
-      console.log('Hello, ' + user.displayName);
+      // console.log('Hello, ' + user.displayName);
     })
     .catch((error) => {
       console.log(error.message);
     });
 }
+
 signOutBtn.onclick = () => auth.signOut();
 
 addItemBtn.onclick = () => {
@@ -52,9 +54,54 @@ addItemBtn.onclick = () => {
 
 auth.onAuthStateChanged(user => {
   if (user) {
-    console.log('User is signed in');
-    whenSignedIn.style.display = 'grid';
-    whenSignedOut.style.display = 'none';
+    fetch(`https://my-closet-app-backend-73fd1180df5d.herokuapp.com/user/userID/${user.uid}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then((data) => {
+      //If the User is not found, create a new user
+      if (data.status === 404) {
+        fetch(`https://my-closet-app-backend-73fd1180df5d.herokuapp.com/user`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            "name": user.displayName,
+            "userID": user.uid,
+            "closetItems": []
+          })
+        }).then(response => {
+          if (response.ok) {
+            console.log('New user created');
+            //Switch to LoggedIn Display
+            console.log('Welcome New User, ' + user.displayName);
+            whenSignedIn.style.display = 'grid';
+            whenSignedOut.style.display = 'none';
+          } else {
+            console.log('Failed to create new user');
+            //Switch to LoggedIn Display
+            whenSignedIn.style.display = 'grid';
+            whenSignedOut.style.display = 'none';
+          }
+        }).catch(error => {
+          console.log('Error creating new user:', error.message);
+        });
+      } 
+      //If the User is found, orgainze the data fetched
+      else {
+        //Switch to LoggedIn Display
+        console.log('Welcome, ' + user.displayName);
+        data.json().then(data => console.log(data.closetItems));
+        //TODO load data from backend
+
+        whenSignedIn.style.display = 'grid';
+        whenSignedOut.style.display = 'none';
+      }
+    }).catch(error => {
+      console.log('Error fetching user:', error.message);
+    })
   } else {
     console.log('User is signed out')
     whenSignedIn.style.display = 'none'
@@ -166,7 +213,7 @@ function addAddItemPopUp(tags) {
     event.preventDefault();
     const formData = new FormData(form);
     formData.forEach(function(value, key) {
-      console.log(key + ': ' + value);
+      //console.log(key + ': ' + value);
       if (key === 'picture') {
         const file = value;
         const storageRef = ref(storage, 'images/' + file.name);
