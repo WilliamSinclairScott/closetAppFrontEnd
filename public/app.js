@@ -111,6 +111,7 @@ addItemBtn.onclick = () => {
     fieldset.appendChild(legend);
   
     // Create checkboxes for tags
+    const tagToID = {};
     data.json().then(data => {
       data.forEach(tag => {
         const label = document.createElement('label');
@@ -118,6 +119,7 @@ addItemBtn.onclick = () => {
         checkbox.type = 'checkbox';
         checkbox.name = 'tags[]';
         checkbox.value = tag.name;
+        tagToID[tag.name] = tag._id;
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(` ${tag.name}`));
         fieldset.appendChild(label);
@@ -213,21 +215,53 @@ addItemBtn.onclick = () => {
       reader.readAsDataURL(file);
     });
     //Add listener for submit button
+    let pictureURL = '';
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const formData = new FormData(form);
       formData.forEach(function(value, key) {
         //console.log(key + ': ' + value);
+        //change picture to a url
         if (key === 'picture') {
           const file = value;
           const storageRef = ref(storage, 'images/' + file.name);
           uploadBytes(storageRef, file).then((snapshot) => {
             console.log('Uploaded a blob or file!');
-            getDownloadURL(storageRef).then((url) => {
+            pictureURL = getDownloadURL(storageRef).then((url) => {
               console.log('File available at', url);
-              value = url;
+              //turn the tags into tagIDs
+              let tagIDs = [];
+              console.log(formData.getAll('tags[]'));
+              console.log(tagToID);
+              formData.getAll('tags[]').forEach(tag => {
+                tagIDs.push(tagToID[tag]);
+              });
+              console.log(tagIDs);
+              //make the closetItem
+              fetch('https://my-closet-app-backend-73fd1180df5d.herokuapp.com/closetItem', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  "name": formData.get('name'),
+                  "picture": url,
+                  "itemTags": tagIDs,
+                  //"userID": auth.currentUser.uid
+                })
+              }).then(response => {
+                if (response.ok) {
+                  console.log('Item added');
+                  section.remove();
+                  addItemBtn.disabled = false;
+                } else {
+                  console.log('Failed to add item');
+                }
+              }).catch(error => {
+                console.log('Error adding item:', error.message);
+              });
             });
-          });
+          })
         }
       });
       //fetch('/upload', {
