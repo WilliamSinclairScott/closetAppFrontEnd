@@ -37,7 +37,8 @@ body{
 #logout{
   display: fixed;
 }
-.ItemBody {  
+
+#ItemBody {  
   display: grid;
   background-image: url("https://ullajohnson.com/cdn/shop/collections/UJ_SS24_L8_PLP_8_1920x.jpg?v=1712171167");
   background-size:cover;

@@ -31,6 +31,8 @@ const whenSignedOut = document.getElementById('whenLoggedOut');
 const signInBtn = document.getElementById('login');
 const signOutBtn = document.getElementById('logout');
 const addItemBtn = document.getElementById('addbtn');
+const itemBody = document.getElementById('ItemBody');
+
 
 //Sign In Firebase with google Auth
 signInBtn.onclick = () => {
@@ -48,8 +50,194 @@ signOutBtn.onclick = () => auth.signOut();
 
 addItemBtn.onclick = () => {
   addItemBtn.disabled = true;
-  const tags = ['T-shirt', 'Jeans', 'Dress', 'Sweater', 'Skirt', 'Shoes'];
-  addAddItemPopUp(tags)
+  const tags = [];
+  fetch('https://my-closet-app-backend-73fd1180df5d.herokuapp.com/itemTag', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }).then((data) => {
+    // Create a section element
+    const section = document.createElement('section');
+    section.id = 'addItemPopUp';
+  
+    // Create a form element
+    const form = document.createElement('form');
+    form.action = '/upload';
+    form.method = 'post';
+    form.enctype = 'multipart/form-data';
+  
+    // Create name input field
+    const nameLabel = document.createElement('label');
+    nameLabel.for = 'name';
+    nameLabel.textContent = 'Name:';
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'name';
+    nameInput.name = 'name';
+    nameInput.required = true;
+    const nameBreak = document.createElement('br');
+    form.appendChild(nameLabel);
+    form.appendChild(nameInput);
+    form.appendChild(nameBreak);
+  
+    // Create file input field
+    const pictureLabel = document.createElement('label');
+    pictureLabel.for = 'picture';
+    pictureLabel.textContent = 'Choose a picture:';
+    const pictureInput = document.createElement('input');
+    pictureInput.type = 'file';
+    pictureInput.id = 'picture';
+    pictureInput.name = 'picture';
+    pictureInput.accept = 'image/*';
+    pictureInput.required = true;
+    const pictureBreak = document.createElement('br');
+    form.appendChild(pictureLabel);
+    form.appendChild(pictureInput);
+    form.appendChild(pictureBreak);
+  
+    // Create preview image
+    const preview = document.createElement('img');
+    preview.id = 'previewAddItem';
+    preview.src = '';
+    preview.style.width = '100px';
+    preview.style.height = '100px';
+    form.appendChild(preview);
+  
+    // Create fieldset for tags
+    const fieldset = document.createElement('fieldset');
+    const legend = document.createElement('legend');
+    legend.textContent = 'Select tags:';
+    fieldset.appendChild(legend);
+  
+    // Create checkboxes for tags
+    data.json().then(data => {
+      data.forEach(tag => {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = 'tags[]';
+        checkbox.value = tag.name;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${tag.name}`));
+        fieldset.appendChild(label);
+      });
+    })
+    // Add fieldset to form
+    form.appendChild(fieldset);
+  
+    //create a tag input field
+    // Create tag input field
+    const tagInput = document.createElement('input');
+    tagInput.type = 'text';
+    tagInput.id = 'newTag';
+    tagInput.placeholder = 'Enter a new tag';
+    const tagBreak = document.createElement('br');
+    form.appendChild(tagInput);
+    form.appendChild(tagBreak);
+  
+    // Add event listener to check if the new tag already exists
+    tagInput.addEventListener('blur', () => {
+      const newTag = tagInput.value.trim();
+      if (newTag !== '' && !tags.includes(newTag)) {
+        //before adding the new tag, check if the tag already exists in the database
+        fetch(`https://my-closet-app-backend-73fd1180df5d.herokuapp.com/itemTag/name/${newTag}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        //if the tag is not found, create a new tag in the database
+        .then(data => {
+          if (data.status === 404) {
+            console.log('Tag not found, creating in the database');
+            fetch(`https://my-closet-app-backend-73fd1180df5d.herokuapp.com/itemTag`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ "name": newTag })
+            }).then(response => {
+              if (response.ok) {
+                console.log('New tag created');
+              } else {
+                console.log('Failed to create new tag');
+              }
+            }).catch(error => {
+              console.log('Error creating new tag:', error.message);
+            });
+          } else {
+            console.log('Tag found, adding to tags array');
+          }
+        });
+        //make the new tag a checkbox
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = 'tags[]';
+        checkbox.value = newTag;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${newTag}`));
+        fieldset.appendChild(label);
+        tags.push(newTag);
+      }
+    });
+  
+    // Create submit button
+    const submitButton = document.createElement('input');
+    submitButton.type = 'submit';
+    submitButton.value = 'Upload';
+    form.appendChild(submitButton);
+    // Create cancel button
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancel';
+    cancelButton.type = 'button';
+    cancelButton.addEventListener('click', () => {
+      // Remove the section from the DOM
+      section.remove();
+      addItemBtn.disabled = false;
+    });
+    form.appendChild(cancelButton);
+    // Add form to section
+    section.appendChild(form);
+  
+    // Append the section after the body of the document
+    document.body.appendChild(section);
+    //add event listener to update preview image
+    pictureInput.addEventListener('change', () => {
+      const file = pictureInput.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        preview.src = reader.result;
+      }
+      reader.readAsDataURL(file);
+    });
+    //Add listener for submit button
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      formData.forEach(function(value, key) {
+        //console.log(key + ': ' + value);
+        if (key === 'picture') {
+          const file = value;
+          const storageRef = ref(storage, 'images/' + file.name);
+          uploadBytes(storageRef, file).then((snapshot) => {
+            console.log('Uploaded a blob or file!');
+            getDownloadURL(storageRef).then((url) => {
+              console.log('File available at', url);
+              value = url;
+            });
+          });
+        }
+      });
+      //fetch('/upload', {
+    });
+  }
+  );
+}
+
+itemBody.ondblclick = () => {
+  console.log('double click');
 }
 
 auth.onAuthStateChanged(user => {
@@ -108,124 +296,3 @@ auth.onAuthStateChanged(user => {
     whenSignedOut.style.display = 'flex'
   }
 })
-
-
-function addAddItemPopUp(tags) {
-  // Create a section element
-  const section = document.createElement('section');
-  section.id = 'addItemPopUp';
-
-  // Create a form element
-  const form = document.createElement('form');
-  form.action = '/upload';
-  form.method = 'post';
-  form.enctype = 'multipart/form-data';
-
-  // Create name input field
-  const nameLabel = document.createElement('label');
-  nameLabel.for = 'name';
-  nameLabel.textContent = 'Name:';
-  const nameInput = document.createElement('input');
-  nameInput.type = 'text';
-  nameInput.id = 'name';
-  nameInput.name = 'name';
-  nameInput.required = true;
-  const nameBreak = document.createElement('br');
-  form.appendChild(nameLabel);
-  form.appendChild(nameInput);
-  form.appendChild(nameBreak);
-
-  // Create file input field
-  const pictureLabel = document.createElement('label');
-  pictureLabel.for = 'picture';
-  pictureLabel.textContent = 'Choose a picture:';
-  const pictureInput = document.createElement('input');
-  pictureInput.type = 'file';
-  pictureInput.id = 'picture';
-  pictureInput.name = 'picture';
-  pictureInput.accept = 'image/*';
-  pictureInput.required = true;
-  const pictureBreak = document.createElement('br');
-  form.appendChild(pictureLabel);
-  form.appendChild(pictureInput);
-  form.appendChild(pictureBreak);
-
-  // Create preview image
-  const preview = document.createElement('img');
-  preview.id = 'previewAddItem';
-  preview.src = '';
-  preview.style.width = '100px';
-  preview.style.height = '100px';
-  form.appendChild(preview);
-
-  // Create fieldset for tags
-  const fieldset = document.createElement('fieldset');
-  const legend = document.createElement('legend');
-  legend.textContent = 'Select tags:';
-  fieldset.appendChild(legend);
-
-  // Create checkboxes for tags
-  tags.forEach(tag => {
-    const label = document.createElement('label');
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.name = 'tags[]';
-    checkbox.value = tag;
-    label.appendChild(checkbox);
-    label.appendChild(document.createTextNode(` ${tag}`));
-    fieldset.appendChild(label);
-  });
-
-  // Add fieldset to form
-  form.appendChild(fieldset);
-
-  // Create submit button
-  const submitButton = document.createElement('input');
-  submitButton.type = 'submit';
-  submitButton.value = 'Upload';
-  form.appendChild(submitButton);
-  // Create cancel button
-  const cancelButton = document.createElement('button');
-  cancelButton.textContent = 'Cancel';
-  cancelButton.type = 'button';
-  cancelButton.addEventListener('click', () => {
-    // Remove the section from the DOM
-    section.remove();
-    addItemBtn.disabled = false;
-  });
-  form.appendChild(cancelButton);
-  // Add form to section
-  section.appendChild(form);
-
-  // Append the section after the body of the document
-  document.body.appendChild(section);
-  //add event listener to update preview image
-  pictureInput.addEventListener('change', () => {
-    const file = pictureInput.files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-      preview.src = reader.result;
-    }
-    reader.readAsDataURL(file);
-  });
-  //Add listener for submit button
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const formData = new FormData(form);
-    formData.forEach(function(value, key) {
-      //console.log(key + ': ' + value);
-      if (key === 'picture') {
-        const file = value;
-        const storageRef = ref(storage, 'images/' + file.name);
-        uploadBytes(storageRef, file).then((snapshot) => {
-          console.log('Uploaded a blob or file!');
-          getDownloadURL(storageRef).then((url) => {
-            console.log('File available at', url);
-            value = url;
-          });
-        });
-      }
-    });
-    //fetch('/upload', {
-  });
-}
