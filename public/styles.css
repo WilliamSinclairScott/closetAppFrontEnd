@@ -41,7 +41,7 @@ body{
 #ItemBody {  
   display: grid;
   background-image: url("https://ullajohnson.com/cdn/shop/collections/UJ_SS24_L8_PLP_8_1920x.jpg?v=1712171167");
-  background-size:cover;
+  background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
   border: darkblue 1px solid;
@@ -90,8 +90,9 @@ body{
   grid-area: TagArea;
   display: flex;
   flex-wrap: wrap;
-  align-items: stretch;
+  align-items: flex-end;
   justify-content: space-evenly;
+
 }
 .Tag { 
   display: inline-flex;
