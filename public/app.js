@@ -46,8 +46,10 @@ signInBtn.onclick = () => {
     });
 }
 
+//Sign Out Firebase
 signOutBtn.onclick = () => auth.signOut();
 
+//Add ClosetItem Button
 addItemBtn.onclick = () => {
   addItemBtn.disabled = true;
   const tags = [];
@@ -56,7 +58,10 @@ addItemBtn.onclick = () => {
     headers: {
       'Content-Type': 'application/json'
     }
-  }).then((data) => {
+  })
+  //load the item Tags to make the init form
+  .then((data) => {
+    // -----------------------------------------------------------------------------------------
     // Create a section element
     const section = document.createElement('section');
     section.id = 'addItemPopUp';
@@ -128,7 +133,6 @@ addItemBtn.onclick = () => {
     // Add fieldset to form
     form.appendChild(fieldset);
   
-    //create a tag input field
     // Create tag input field
     const tagInput = document.createElement('input');
     tagInput.type = 'text';
@@ -217,78 +221,94 @@ addItemBtn.onclick = () => {
       }
       reader.readAsDataURL(file);
     });
+    //-----------------------------------------------------------------------------------------
 
     //Add listener for submit button
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const formData = new FormData(form);
-      let tagIDs = [];
-      formData.getAll('tags[]').forEach(tag => {
-        tagIDs.push(tagToID[tag]);
+      const getTags = new Promise((resolve, reject) => {
+        let tagIDs = [];
+        formData.getAll('tags[]').forEach(tag => {
+          tagIDs.push(tagToID[tag]);
+        });
+        resolve(tagIDs);
       });
-
+      //Get the tag IDs
       //Get the picture and upload it to firebase storage
       const file = formData.get('picture');
       const storageRef = ref(storage, 'images/' + file.name);
-      uploadBytes(storageRef, file).then(() => {
-        getDownloadURL(storageRef).then((url) => {
-          
-          //With the url, create the closetItem
-          fetch('https://my-closet-app-backend-73fd1180df5d.herokuapp.com/closetItem', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              "name": formData.get('name'),
-              "picture": url,
-              "itemTags": tagIDs,
-            })
-          })
-          //announce Item Made
-          .then(response => {
-            if (response.ok) {
-              console.log('Item added with _id: ' + response._id);
-              section.remove();
-              addItemBtn.disabled = false;
-            } else {
-              console.log('Failed to add item');
-            }
-          })
-          //UPDATE USER BY FIREBASE ID
-          .then(() => {
-            console.log('Adding item to user');
-            fetch(`https://my-closet-app-backend-73fd1180df5d.herokuapp.com/user/userID/${auth.currentUser.uid}`, {
-              method: 'PATCH',
+      let closetID = '';
+      getTags.then(tagIDs => {
+        uploadBytes(storageRef, file).then(() => {
+          getDownloadURL(storageRef).then((url) => {
+
+            //With the url, create the closetItem
+            fetch('https://my-closet-app-backend-73fd1180df5d.herokuapp.com/closetItem/', {
+              method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({ "closetItems": []})
-          }).then(response => {
-            if (response.ok) {
-              console.log('User updated');
-            } else {
-              console.log('Failed to update user');
-            }
+              body: JSON.stringify({
+                "name": formData.get('name'),
+                "picture": url,
+                "itemTags": tagIDs,
+              })
+            })
+            //announce Item Made
+            .then(response => {
+              if (response.ok) {
+                console.log('Item added with ID', response._id);
+                closetID = response._id;
+                section.remove();
+                addItemBtn.disabled = false;
+              } else {
+                console.log('Failed to add item');
+              }
+              //UPDATE USER BY FIREBASE ID <-User ID-> with closetID
+              console.log('Adding item to user');
+              fetch(`https://my-closet-app-backend-73fd1180df5d.herokuapp.com/user/${auth.currentUser.uid}`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ closetItems: response._id })
+              })
+              .then(response => {
+                if (response.ok) {
+                  console.log('User updated');
+                } else {
+                  console.log('Failed to update user');
+                }
+              })
+              //Error handling
+              .catch(error => {
+              console.log('Error adding item:', error.message);
+              })
+              
+            })
+          //end of getDownloadURL
+          })
+        //end of uploadBytes
         })
-          //Error handling
-          .catch(error => {
-            console.log('Error adding item:', error.message);
-          });
-        });
+      //end of getTags  
       })
-    });
-    });
-  });
-}
+    //end of form event listener
+    })
+  //end of fetch
+  })
+//end of add item button
+};
 
+//Item Body Double Click
 itemBody.ondblclick = () => {
   console.log('double click');
 }
 
+//Login/Logout Display
 auth.onAuthStateChanged(user => {
   if (user) {
-    fetch(`https://my-closet-app-backend-73fd1180df5d.herokuapp.com/user/userID/${user.uid}`, {
+    fetch(`https://my-closet-app-backend-73fd1180df5d.herokuapp.com/user/${user.uid}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
