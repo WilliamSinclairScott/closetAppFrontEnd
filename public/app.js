@@ -247,7 +247,7 @@ addItemBtn.onclick = () => {
       //Get the tag IDs
       //Get the picture and upload it to firebase storage
       const file = formData.get('picture');
-      const storageRef = ref(storage, 'images/' + file.name);
+      const storageRef = ref(storage, 'images/' + auth.currentUser.uid + file.name);
       getTags.then(tagIDs => {
         uploadBytes(storageRef, file).then(() => {
           getDownloadURL(storageRef).then((url) => {
