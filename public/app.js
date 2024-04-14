@@ -33,6 +33,16 @@ const signOutBtn = document.getElementById('logout');
 const addItemBtn = document.getElementById('addbtn');
 const itemBody = document.getElementById('ItemBody');
 
+//class for the closetItem
+class ClosetItem {
+  constructor(name, url, tags) {
+    this.name = name;
+    this.pictureURL = url;
+    this.tags = tags;
+  }
+}
+
+const loadedItems = [];
 
 //Sign In Firebase with google Auth
 signInBtn.onclick = () => {
@@ -323,8 +333,65 @@ addItemBtn.onclick = () => {
 };
 
 //Item Body Double Click
-itemBody.ondblclick = () => {
-  console.log('double click');
+
+//TODO talk about this
+itemBody.onclick = () => {
+  console.log('click');
+  //update ItemBody with a random item from loadedItems
+  const randomItem = loadedItems[Math.floor(Math.random() * loadedItems.length)];
+  
+  //fetch the tag names and populate tagNames
+  const tagNames = [];
+  const fetchTagNames = async () => {
+    for (const tagID of randomItem.tags) {
+      try {
+        if (tagID) {
+          const response = await fetch(`https://my-closet-app-backend-73fd1180df5d.herokuapp.com/itemTag/${tagID}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          if (response.ok) {
+            const tag = await response.json();
+            tagNames.push(tag.name);
+          } else {
+            console.log('Failed to fetch tag name');
+          }
+        }
+      } catch (error) {
+        console.log('Error fetching tag name:', error.message);
+      }
+    }
+  };
+
+  //"then"
+  fetchTagNames().then(() => {
+    console.log(
+      'Name:', randomItem.name,
+      'URL:', randomItem.pictureURL,
+      'Tags:', tagNames
+    );
+  
+    //update Title-of-Item with randomItem.name
+    document.getElementById('Title-Of-Item').textContent = randomItem.name !== null ?  randomItem.name : 'null Name Error';
+    //update the background image of the ItemBody with randomItem.pictureURL
+    document.getElementById('ItemBody').style.backgroundImage = `url(${randomItem.pictureURL})`;
+    //update the tags of TagArea with randomItem.tags
+    const tagArea = document.getElementById('TagArea');
+    //remove all children of tagArea
+    while (tagArea.firstChild) {
+      tagArea.removeChild(tagArea.firstChild);
+    }
+    //add each tag to tagArea
+    for (const tag of tagNames) {
+    const tagElement = document.createElement('div');
+    tagElement.textContent = tag === null ? 'null Tag Error' : tag;
+    tagElement.classList.add('Tag');
+    tagArea.appendChild(tagElement);
+  }
+  
+  });
 }
 
 //Login/Logout Display
@@ -369,16 +436,22 @@ auth.onAuthStateChanged(user => {
       else {
         //Switch to LoggedIn Display
         console.log('Welcome, ' + user.displayName);
-        data.json().then(data => console.log(data.closetItems));
-        //TODO load data from backend
-
+        //load items
+        data.json().then(data => {
+          //For each closetItem, fetch the data and add it to the loadedItems array with the ClosetItem object class
+          for (const closet of data.closetItems) {
+            loadedItems.push(new ClosetItem(closet.name, closet.picture, closet.itemTags));
+          }
+        });
         whenSignedIn.style.display = 'grid';
         whenSignedOut.style.display = 'none';
       }
     }).catch(error => {
       console.log('Error fetching user:', error.message);
     })
-  } else {
+  } 
+  //Logout Logic
+  else {
     console.log('User is signed out')
     whenSignedIn.style.display = 'none'
     whenSignedOut.style.display = 'flex'

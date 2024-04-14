@@ -57,7 +57,7 @@ body{
   grid-area: ItemBody;
 }
 
-.Title-Of-Item { 
+#Title-Of-Item { 
   grid-area: Title-Of-Item; 
   display: flex;
   justify-content: center;
@@ -86,7 +86,8 @@ body{
   margin: 5px;
   border: solid 1px rgba(0, 0, 0, 0.4);
 }
-.TagArea { 
+
+#TagArea { 
   grid-area: TagArea;
   display: flex;
   flex-wrap: wrap;
